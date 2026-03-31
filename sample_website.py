@@ -6,7 +6,7 @@ from src.video_analysis import process_multimodal_video
 import json
 
 # ── init ──────────────────────────────────────────────────────────────────────
-bot = Chatbot(raw_input)
+bot = Chatbot(raw_input, activity_name='gears')
 
 
 # ── agent setup ───────────────────────────────────────────────────────────────
@@ -21,12 +21,12 @@ def set_agent(agent):
 
 
 # ── activity selection ────────────────────────────────────────────────────────
-# Stores the currently selected activity; defaults to "gears"
 selected_activity = {"name": "gears"}
 
 def select_activity(activity_name):
     """Update the selected activity and reset the conversation."""
     selected_activity["name"] = activity_name
+    bot.activity_name = activity_name          # ← updates bot's activity
     bot.messages = []
     status_text = "⚙️ Gears Activity selected — ready!" if activity_name == "gears" else "📦 3D Volume Activity selected — ready!"
     return [], gr.update(value=status_text)
@@ -40,7 +40,6 @@ def chat(agent, input_type, text, audio, video, history):
     if len(bot.messages) == 0:
         set_agent(agent)
 
-    # ── resolve user_input from whichever mode is active ──────────────────
     if input_type == "Text":
         print("Into the text")
         if not text or not text.strip():
@@ -76,13 +75,11 @@ def chat(agent, input_type, text, audio, video, history):
         yield history, history, gr.update(value="")
         return
 
-    # ── send to LLM ───────────────────────────────────────────────────────
     bot.messages.append({"role": "user", "content": user_input})
     history.append({"role": "user", "content": user_input})
     yield history, history, gr.update(value="")
 
-    # Pass the currently selected activity to generate()
-    response = bot.generate(activity_name=selected_activity["name"])
+    response = bot.generate()
     reply = ""
     history.append({"role": "assistant", "content": ""})
 
@@ -166,50 +163,29 @@ footer { display: none !important; }
     color: var(--muted); margin-bottom: 8px; display: block;
 }
 
-/* ── activity selector buttons ── */
-#activity-selector {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 4px;
-}
-#gears-btn, #volume-btn {
-    flex: 1 !important;
+/* ── activity selector — Gradio buttons only ── */
+#gears-btn-gr, #volume-btn-gr {
     border-radius: var(--r) !important;
     border: 3px solid var(--border) !important;
     background: var(--surface) !important;
     padding: 18px 10px !important;
-    cursor: pointer !important;
-    transition: all 0.2s !important;
     font-family: 'Fredoka One', sans-serif !important;
     font-size: 16px !important;
     color: var(--muted) !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+    transition: all 0.2s !important;
 }
-#gears-btn:hover {
+#gears-btn-gr:hover {
     border-color: var(--orange) !important;
     color: var(--orange) !important;
     transform: translateY(-3px) !important;
     box-shadow: 0 6px 20px rgba(244,125,0,0.25) !important;
 }
-#volume-btn:hover {
+#volume-btn-gr:hover {
     border-color: var(--blue) !important;
     color: var(--blue) !important;
     transform: translateY(-3px) !important;
     box-shadow: 0 6px 20px rgba(0,130,204,0.25) !important;
-}
-#gears-btn.activity-active {
-    background: linear-gradient(135deg, var(--orange), #e06400) !important;
-    color: #fff !important;
-    border-color: transparent !important;
-    box-shadow: 0 6px 20px rgba(244,125,0,0.40) !important;
-    transform: translateY(-3px) !important;
-}
-#volume-btn.activity-active {
-    background: linear-gradient(135deg, var(--blue), var(--teal)) !important;
-    color: #fff !important;
-    border-color: transparent !important;
-    box-shadow: 0 6px 20px rgba(0,130,204,0.40) !important;
-    transform: translateY(-3px) !important;
 }
 
 /* ── agent radio — activity cards ── */
@@ -263,17 +239,28 @@ footer { display: none !important; }
 }
 #chatbot-window .message-wrap { font-family: 'Nunito', sans-serif !important; font-size: 14px !important; }
 
-/* ── text input ── */
+/* ── text input — FIXED: text now visible ── */
 #text-input textarea {
-    font-family: 'Nunito', sans-serif !important; font-size: 14px !important;
-    font-weight: 600 !important; border-radius: var(--rs) !important;
-    border: 2.5px solid var(--border) !important; background: var(--surface) !important;
+    font-family: 'Nunito', sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    border-radius: var(--rs) !important;
+    border: 2.5px solid var(--border) !important;
+    background: var(--surface) !important;
+    color: var(--text) !important;              /* ← typed text visible */
+    caret-color: var(--teal) !important;        /* ← cursor colour */
     transition: border-color 0.2s, box-shadow 0.2s !important;
-    padding: 12px 16px !important; resize: none !important;
+    padding: 12px 16px !important;
+    resize: none !important;
+}
+#text-input textarea::placeholder {
+    color: var(--muted) !important;
+    opacity: 1 !important;
 }
 #text-input textarea:focus {
     border-color: var(--teal) !important;
-    box-shadow: 0 0 0 3px rgba(0,180,200,0.15) !important; outline: none !important;
+    box-shadow: 0 0 0 3px rgba(0,180,200,0.15) !important;
+    outline: none !important;
 }
 #text-input label {
     font-weight: 800 !important; font-size: 11px !important; color: var(--muted) !important;
@@ -336,26 +323,12 @@ with gr.Blocks(
     </div>
     """)
 
-    # ── activity selector ─────────────────────────────────────────────────────
+    # ── activity selector — Gradio buttons only (decorative HTML buttons removed) ──
     gr.HTML('<span class="slabel">Choose your activity</span>')
-    gr.HTML("""
-    <div id="activity-selector">
-      <button id="gears-btn" class="activity-active" onclick="
-        document.getElementById('gears-btn').classList.add('activity-active');
-        document.getElementById('volume-btn').classList.remove('activity-active');
-      ">⚙️ Gears</button>
-      <button id="volume-btn" onclick="
-        document.getElementById('volume-btn').classList.add('activity-active');
-        document.getElementById('gears-btn').classList.remove('activity-active');
-      ">📦 3D Volume</button>
-    </div>
-    """)
-
     with gr.Row(elem_id="activity-selector-row"):
-        gears_btn = gr.Button("⚙️  Gears", elem_id="gears-btn-gr", variant="secondary")
-        volume_btn = gr.Button("📦  3D Volume", elem_id="volume-btn-gr", variant="secondary")
+        gears_btn  = gr.Button("⚙️  Gears",     elem_id="gears-btn-gr",  variant="secondary")
+        volume_btn = gr.Button("📦  3D Volume",  elem_id="volume-btn-gr", variant="secondary")
 
-    # Activity status feedback textbox (read-only, shows which activity is active)
     activity_status = gr.Textbox(
         value="⚙️ Gears Activity selected — ready!",
         label="",
@@ -466,14 +439,14 @@ with gr.Blocks(
     # ── wiring ────────────────────────────────────────────────────────────────
     input_type.change(toggle, inputs=input_type, outputs=[text_input, audio_input, video_input])
 
-    # Activity buttons: reset chat and update status label
+    # Activity buttons: update bot.activity_name, reset chat, update status
     gears_btn.click(
         fn=lambda: select_activity("gears"),
         inputs=[],
         outputs=[chatbot, activity_status],
     )
     volume_btn.click(
-        fn=lambda: select_activity("3d_volume"),
+        fn=lambda: select_activity("threedvolume"),
         inputs=[],
         outputs=[chatbot, activity_status],
     )

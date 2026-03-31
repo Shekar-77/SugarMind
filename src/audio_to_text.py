@@ -71,4 +71,3 @@ def audio_to_text(file_path:str):
     print(f"Result: {response['assessment']} | Score: {response['user_confidence_score']}")
     return response
 
-audio_to_text(file_path="audio.mp3")
