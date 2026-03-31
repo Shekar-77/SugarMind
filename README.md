@@ -11,8 +11,6 @@ Since Sugar is mainly used by children aged **5–12 years**, I made sure that t
 
 I focused on providing something meaningful to the community through which children can learn and make the best of their experience.
 
-👉 **Prototype:** *Sugar Mind* (add your link here)
-
 ---
 
 ## Workflow Visualization
@@ -149,44 +147,55 @@ The Gen agent ensures **overall understanding and learning reinforcement**.
 * Asks broad, easy-to-understand questions
 * Confirms conceptual clarity
 
----
+## 📁 Project Structure
 
-**Current folder directory :**
+```
 .
 ├── activity_json/
-│   ├── 3D Volume Activity.json
-│   └── Gears Activity (1).json
+│   ├── 3D Volume Activity.json      # Activity interaction data from Sugarizer
+│   └── Gears Activity (1).json      # User activity logs
 │
 ├── Prompts/
-│   
 │   └── Activity_description/
 │       ├── __pycache__/
-│       ├── Gears.py
-│       └── three_d_Volume.py
+│       ├── Gears.py                 # Prompt logic for Gears activity
+│       └── three_d_Volume.py        # Prompt logic for 3D Volume activity
 │
 ├── Agents/
-│  
-│   ├── Emo_agent.py
-│   ├── gen_agent.py
-│   └── logic_agent.py
+│   ├── Emo_agent.py                # Emotional reflection agent
+│   ├── gen_agent.py                # General reflection agent
+│   └── logic_agent.py              # Logical/critical thinking agent
 │
 ├── src/
 │   ├── __pycache__/
-│   
-│   ├── Create_vector_store.py
-│   ├── inference.py
-│   └── video_analysis.py
+│   ├── Create_vector_store.py      # Vector DB creation for context retrieval
+│   ├── inference.py                # Core inference pipeline
+│   └── video_analysis.py           # Video input processing & metrics
 │
-├── Activity_description.lnk
-├── get_activity_description.py
-├── create_dataset.py
-├── create_prompts_files.py
-├── index.html
-├── new.txt
-├── sample_website.py
-├── server.py
-├── requirements.txt
-├── README.md
+├── Activity_description.lnk        # Shortcut to activity descriptions
+├── get_activity_description.py     # Extracts activity-related metadata
+├── create_dataset.py               # Dataset preparation script
+├── create_prompts_files.py         # Generates prompt templates
+├── index.html                      # Frontend entry (if used)
+├── new.txt                         # Misc file (can be cleaned)
+├── sample_website.py               # Sample UI/demo script
+├── server.py                       # Backend server logic
+├── requirements.txt                # Python dependencies
+├── README.md                       # Project documentation
+```
+
+---
+
+### 🧠 Overview
+
+* **activity_json/** → Stores user interaction data from Sugarizer activities
+* **Prompts/** → Contains activity-specific prompt engineering logic
+* **Agents/** → Core reflection agents (Emo, Logic, Gen)
+* **src/** → Backend processing (inference, embeddings, video analysis)
+* **Scripts** → Dataset creation, prompt generation, and activity parsing
+* **server.py / UI files** → Handle application interface and interaction
+
+---
 
 ## 🚀 How to Reproduce & Run Inference
 
@@ -195,8 +204,8 @@ Follow these steps to set up and run **SugarMind** locally:
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repo-link>
-cd <your-repo-folder>
+git clone https://github.com/Shekar-77/SugarMind/
+cd SugarMind
 ```
 
 ---
@@ -218,7 +227,40 @@ pip install -r requirements.txt
 
 ---
 
-### 4. Run the Application
+## 📦 Model Setup & Reproduction
+
+### 1. Download Model Weights
+
+Download the `.tar` model weights from the provided link:
+
+👉 *(Add your model download link here)*
+
+---
+
+### 2. Extract and Place Weights
+
+After downloading, extract the `.tar` file and place the folders in the project root directory as shown below:
+
+```
+.
+├── final_model/          # Extracted main model weights
+├── final_model_gguf/     # (Optional) GGUF / quantized weights
+├── activity_json/
+├── Prompts/
+├── Agents/
+├── src/
+├── server.py
+├── requirements.txt
+└── README.md
+```
+
+> ⚠️ Make sure the model folders (`final_model`, `final_model_gguf`) are at the **root level** of the project (same level as `server.py`).
+
+---
+
+### 3. Run the Application
+
+Once the weights are placed correctly, start the application:
 
 ```bash
 python SugarMind.py
@@ -226,10 +268,15 @@ python SugarMind.py
 
 ---
 
-### 5. Open in Browser
+### 4. Access the UI
 
-After running, a **Gradio** link will appear in the terminal (usually like `http://127.0.0.1:7860`).
+* A **Gradio** link will appear in the terminal
+* Open it in your browser (usually `http://127.0.0.1:7860`)
 
-Open it in your browser to start using **SugarMind** 🎉
+---
 
+### ✅ Notes
 
+* Ensure the `.tar` file is fully extracted before running
+* Folder names must match exactly (`final_model`, etc.)
+* If the model is not found, check paths inside `inference.py` or `server.py`
