@@ -233,7 +233,7 @@ pip install -r requirements.txt
 
 Download the `.tar` model weights from the provided link:
 
-👉 *(Add your model download link here)*
+👉 https://drive.google.com/drive/folders/1zJcU4NIrSMsNS82XiXIjlHKubATrFJAp?usp=drive_link
 
 ---
 
