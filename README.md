@@ -206,12 +206,13 @@ The Gen agent ensures **overall understanding and learning reinforcement**.
 * **src/** → Backend processing (inference, embeddings, video analysis)
 * **Scripts** → Dataset creation, prompt generation, and activity parsing
 * **server.py / UI files** → Handle application interface and interaction
-
+* create_dataset.py: https://github.com/Shekar-77/SugarMind/blob/main/create_dataset.py was used extract data from the books
 ---
 
 ## 🚀 How to Reproduce & Run Inference
 
-Follow these steps to set up and run **SugarMind** locally:
+Follow these steps to set up and run **S
+ugarMind** locally:
 
 ### 1. Clone the Repository
 
