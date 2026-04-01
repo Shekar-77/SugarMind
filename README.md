@@ -29,6 +29,9 @@ Note: Proposal claims that the prototype can converse about gears and paint acti
 Video example:
 https://github.com/user-attachments/assets/c46c97ea-bf3a-4956-a133-779e7a802dae
 
+<video src="Video_tutorial.mp4" width="600" controls>
+</video>
+
 
 ---
 
