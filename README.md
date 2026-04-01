@@ -27,6 +27,7 @@ Additionally:
 ---
 
 ### System Workflow
+<img width="900" height="491" alt="image" src="https://github.com/user-attachments/assets/5366b82a-3168-4a16-b6ae-451b2112bde4" />
 
 1. **Activity Selection**
 
@@ -278,6 +279,8 @@ Note: If uploading upload .mp4, .mp3 preferably
 
 You can also run terminal inference using:
 python - m src.inference
+<img width="856" height="554" alt="image" src="https://github.com/user-attachments/assets/d83bb76b-a006-4a8e-b7b7-e9650f84039d" />
+You can un comment this code and run inference, change activity name to 'gears' to converse about it. Add the required folder path accordingly.
 But have to insert recording of audio, video folder path.
 
 ### ✅ Notes
