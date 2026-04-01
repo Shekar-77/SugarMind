@@ -273,7 +273,12 @@ python SugarMind.py
 * A **Gradio** link will appear in the terminal
 * Open it in your browser (usually `http://127.0.0.1:7860`)
 
+Note: If uploading upload .mp4, .mp3 preferably
 ---
+
+You can also run terminal inference using:
+python - m src.inference
+But have to insert recording of audio, video folder path.
 
 ### ✅ Notes
 
