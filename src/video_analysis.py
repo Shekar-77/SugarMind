@@ -4,10 +4,12 @@ from transformers import BlipProcessor, BlipForConditionalGeneration
 from PIL import Image
 import librosa
 import numpy as np
-from moviepy.editor import VideoFileClip
+from moviepy import VideoFileClip
 from transformers import pipeline
 import torch
 from fer import FER
+import subprocess
+import os
 
 # ── Load Models ───────────────────────────────────────────────────────────────
 device = "cpu"
@@ -33,6 +35,34 @@ face_detector = FER(mtcnn=True)
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
+
+def _convert_to_mp4(video_path: str) -> str:
+    """
+    Convert a WebM (or any browser-recorded container) to a proper MP4.
+    Browser recordings via MediaRecorder often produce incomplete WebM files
+    that ffmpeg/MoviePy cannot parse. Returns the path to the converted file.
+    The caller is responsible for cleaning up the returned temp file.
+    """
+    converted_path = video_path.rsplit(".", 1)[0] + "_converted.mp4"
+    try:
+        subprocess.run(
+            [
+                "ffmpeg", "-y",
+                "-i", video_path,
+                "-c:v", "libx264",
+                "-preset", "fast",
+                "-c:a", "aac",
+                "-strict", "experimental",
+                converted_path,
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return converted_path
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"ffmpeg conversion failed: {e}") from e
+
 
 def _safe_detect_emotions(frame: np.ndarray) -> list[dict]:
     """
@@ -73,105 +103,125 @@ def _safe_detect_emotions(frame: np.ndarray) -> list[dict]:
 
 def process_multimodal_video(video_path: str) -> list[dict]:
 
-    # --- STEP 1: Audio Extraction & Transcription ---
-    print("Extracting and analyzing audio quality...")
-    video_clip = VideoFileClip(video_path)
-    audio_path = "temp_audio.wav"
+    # --- STEP 0: Convert WebM → MP4 (browser recordings are often broken WebM) ---
+    converted_path = None
+    if video_path.lower().endswith(".webm"):
+        print("Detected WebM — converting to MP4 for compatibility...")
+        try:
+            converted_path = _convert_to_mp4(video_path)
+            video_path = converted_path
+            print(f"Conversion successful: {video_path}")
+        except RuntimeError as e:
+            print(f"Warning: {e} — attempting to proceed with original file.")
 
-    if video_clip.audio:
-        video_clip.audio.write_audiofile(audio_path, logger=None)
-        audio_result = audio_model.transcribe(audio_path, verbose=False)
-        segments = audio_result["segments"]
-        y, sr = librosa.load(audio_path)
-    else:
-        segments, y, sr = [], None, None
+    try:
+        # --- STEP 1: Audio Extraction & Transcription ---
+        print("Extracting and analyzing audio quality...")
+        video_clip = VideoFileClip(video_path)
+        audio_path = "temp_audio.wav"
 
-    # --- STEP 2: Per-second Visual & Audio Analysis ---
-    cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    duration_sec = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / max(fps, 1))
-    final_report = []
-
-    for second in range(duration_sec):
-        cap.set(cv2.CAP_PROP_POS_MSEC, second * 1000)
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        # 2.1 Visual Captioning (BLIP)
-        rgb_frame = cv2.cvtColor(cv2.resize(frame, (384, 384)), cv2.COLOR_BGR2RGB)
-        inputs = blip_processor(Image.fromarray(rgb_frame), return_tensors="pt").to(device)
-        out = blip_model.generate(**inputs, max_new_tokens=20)
-        visual_caption = blip_processor.decode(out[0], skip_special_tokens=True)
-
-        # 2.2 Face & Visual Emotion Detection — uses crash-safe wrapper
-        face_data = _safe_detect_emotions(frame)
-        face_present = len(face_data) > 0
-        visual_emotion = "N/A"
-        visual_conf = 0.0
-
-        if face_present:
-            emotions = face_data[0]["emotions"]
-            visual_emotion = max(emotions, key=emotions.get)
-            visual_conf = float(emotions[visual_emotion])
-
-        # 2.3 Audio Logic & Kid-Optimized Scoring
-        audio_text = "[No Speech]"
-        final_score = 0.0
-        audio_tone = "N/A"
-
-        if y is not None:
-            current_segments = [s for s in segments if s["start"] <= second <= s["end"]]
-
-            if current_segments:
-                audio_text = " ".join([s["text"] for s in current_segments]).strip()
-                ai_cert = float(np.exp(np.mean([s["avg_logprob"] for s in current_segments])))
-
-                # Technical Quality Slicing
-                start_samp = int(second * sr)
-                end_samp   = int((second + 1) * sr)
-                audio_slice = y[start_samp:end_samp]
-
-                if len(audio_slice) > 0:
-                    vol_norm     = min(float(np.mean(librosa.feature.rms(y=audio_slice))) / 0.05, 1.0)
-                    clarity_norm = min(float(np.mean(librosa.feature.spectral_centroid(y=audio_slice, sr=sr))) / 3000, 1.0)
-
-                    # Kid-Specific Metric: Verbal Effort (words per second)
-                    effort_score = min(len(audio_text.split()) / 5, 1.0)
-
-                    # Weighted Formula (40% AI cert, 30% Effort, 20% Volume, 10% Clarity)
-                    audio_conf = (ai_cert * 0.4) + (effort_score * 0.3) + (vol_norm * 0.2) + (clarity_norm * 0.1)
-
-                    # Final Fusion: 70% Audio + 30% Visual (penalised by 0.5 if no face)
-                    face_multiplier = 1.0 if face_present else 0.5
-                    final_score = round(
-                        ((audio_conf * 0.7) + (visual_conf * 0.3)) * face_multiplier * 100, 2
-                    )
-
-                    # Tone Detection
-                    tone_res   = emotion_classifier(audio_path)
-                    audio_tone = tone_res[0]["label"]
-
-        # 2.4 Kid-Friendly Status Interpretation
-        if final_score > 75:
-            status = "Super Star! Very Confident"
-        elif final_score > 45:
-            status = "Great Effort! Keep Sharing"
+        if video_clip.audio:
+            video_clip.audio.write_audiofile(audio_path, logger=None)
+            audio_result = audio_model.transcribe(audio_path, verbose=False)
+            segments = audio_result["segments"]
+            y, sr = librosa.load(audio_path)
         else:
-            status = "Thinking or Needs Encouragement"
+            segments, y, sr = [], None, None
 
-        final_report.append({
-            "timestamp":        f"{second}s",
-            "face_detected":    face_present,
-            "visual_emotion":   visual_emotion,
-            "visual_caption":   visual_caption,
-            "audio_speech":     audio_text,
-            "audio_tone":       audio_tone,
-            "confidence_score": f"{final_score}%",
-            "status":           status,
-        })
-        print(f"[{second}s] Face: {face_present} | Score: {final_score}% | {status}")
+        # --- STEP 2: Per-second Visual & Audio Analysis ---
+        cap = cv2.VideoCapture(video_path)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        duration_sec = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / max(fps, 1))
+        final_report = []
 
-    cap.release()
-    video_clip.close()
-    return final_report
+        for second in range(duration_sec):
+            cap.set(cv2.CAP_PROP_POS_MSEC, second * 1000)
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            # 2.1 Visual Captioning (BLIP)
+            rgb_frame = cv2.cvtColor(cv2.resize(frame, (384, 384)), cv2.COLOR_BGR2RGB)
+            inputs = blip_processor(Image.fromarray(rgb_frame), return_tensors="pt").to(device)
+            out = blip_model.generate(**inputs, max_new_tokens=20)
+            visual_caption = blip_processor.decode(out[0], skip_special_tokens=True)
+
+            # 2.2 Face & Visual Emotion Detection — uses crash-safe wrapper
+            face_data = _safe_detect_emotions(frame)
+            face_present = len(face_data) > 0
+            visual_emotion = "N/A"
+            visual_conf = 0.0
+
+            if face_present:
+                emotions = face_data[0]["emotions"]
+                visual_emotion = max(emotions, key=emotions.get)
+                visual_conf = float(emotions[visual_emotion])
+
+            # 2.3 Audio Logic & Kid-Optimized Scoring
+            audio_text = "[No Speech]"
+            final_score = 0.0
+            audio_tone = "N/A"
+
+            if y is not None:
+                current_segments = [s for s in segments if s["start"] <= second <= s["end"]]
+
+                if current_segments:
+                    audio_text = " ".join([s["text"] for s in current_segments]).strip()
+                    ai_cert = float(np.exp(np.mean([s["avg_logprob"] for s in current_segments])))
+
+                    # Technical Quality Slicing
+                    start_samp = int(second * sr)
+                    end_samp   = int((second + 1) * sr)
+                    audio_slice = y[start_samp:end_samp]
+
+                    if len(audio_slice) > 0:
+                        vol_norm     = min(float(np.mean(librosa.feature.rms(y=audio_slice))) / 0.05, 1.0)
+                        clarity_norm = min(float(np.mean(librosa.feature.spectral_centroid(y=audio_slice, sr=sr))) / 3000, 1.0)
+
+                        # Kid-Specific Metric: Verbal Effort (words per second)
+                        effort_score = min(len(audio_text.split()) / 5, 1.0)
+
+                        # Weighted Formula (40% AI cert, 30% Effort, 20% Volume, 10% Clarity)
+                        audio_conf = (ai_cert * 0.4) + (effort_score * 0.3) + (vol_norm * 0.2) + (clarity_norm * 0.1)
+
+                        # Final Fusion: 70% Audio + 30% Visual (penalised by 0.5 if no face)
+                        face_multiplier = 1.0 if face_present else 0.5
+                        final_score = round(
+                            ((audio_conf * 0.7) + (visual_conf * 0.3)) * face_multiplier * 100, 2
+                        )
+
+                        # Tone Detection
+                        tone_res   = emotion_classifier(audio_path)
+                        audio_tone = tone_res[0]["label"]
+
+            # 2.4 Kid-Friendly Status Interpretation
+            if final_score > 75:
+                status = "Super Star! Very Confident"
+            elif final_score > 45:
+                status = "Great Effort! Keep Sharing"
+            else:
+                status = "Thinking or Needs Encouragement"
+
+            final_report.append({
+                "timestamp":        f"{second}s",
+                "face_detected":    face_present,
+                "visual_emotion":   visual_emotion,
+                "visual_caption":   visual_caption,
+                "audio_speech":     audio_text,
+                "audio_tone":       audio_tone,
+                "confidence_score": f"{final_score}%",
+                "status":           status,
+            })
+            print(f"[{second}s] Face: {face_present} | Score: {final_score}% | {status}")
+
+        cap.release()
+        video_clip.close()
+        return final_report
+
+    finally:
+        # Clean up the converted temp file if one was created
+        if converted_path and os.path.exists(converted_path):
+            try:
+                os.remove(converted_path)
+            except OSError:
+                pass
