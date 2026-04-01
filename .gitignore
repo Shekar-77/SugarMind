@@ -4,3 +4,5 @@ final_model
 phsyc_data
 cleaned_dataset.txt
 phsyc_data.tar
+__pycache__/
+*.pyc
