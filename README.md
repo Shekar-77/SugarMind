@@ -24,6 +24,8 @@ Additionally:
 * Audio and video pipelines are supported by specialized metrics
 * These metrics help the model better understand and analyze user responses
 
+Note: Proposal claims that the prototype can converse about gears and paint activity, but instead it is gears and 3d volume activity.
+
 ---
 
 ### System Workflow
