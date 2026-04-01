@@ -25,10 +25,18 @@ selected_activity = {"name": "gears"}
 
 def select_activity(activity_name):
     """Update the selected activity and reset the conversation."""
+    global bot  # Add global to modify the bot variable
+    
     selected_activity["name"] = activity_name
     bot.activity_name = activity_name          # ← updates bot's activity
     bot.messages = []
-    status_text = "⚙️ Gears Activity selected — ready!" if activity_name == "gears" else "📦 3D Volume Activity selected — ready!"
+    if activity_name == "gears":
+        bot = Chatbot(raw_input, activity_name='gears')
+        status_text = "⚙️ Gears Activity selected — ready!"
+    else:  # threedvolume
+        bot = Chatbot(raw_input, activity_name='3d volume')
+        status_text = "3d volume activity is ready"
+
     return [], gr.update(value=status_text)
 
 
