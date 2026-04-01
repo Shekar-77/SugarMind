@@ -25,13 +25,13 @@ Additionally:
 * These metrics help the model better understand and analyze user responses
 
 Note: Proposal claims that the prototype can converse about gears and paint activity, but instead it is gears and 3d volume activity.
-You can access funny tune code if it is not working: https://colab.research.google.com/drive/1FEqDT1HXXjYEHDQ5peddYvmloZ8kB6yg
+You cannot access fine tuning code, I request you to try this link once or download the code and view it locally: https://colab.research.google.com/drive/1FEqDT1HXXjYEHDQ5peddYvmloZ8kB6yg
 
 Video example:
-https://github.com/user-attachments/assets/c46c97ea-bf3a-4956-a133-779e7a802dae
 
-<video src="Video_tutorial.mp4" width="600" controls>
+<video src="https://github.com/user-attachments/assets/c46c97ea-bf3a-4956-a133-779e7a802dae" controls="controls" style="max-width: 100%;">
 </video>
+
 
 
 ---
