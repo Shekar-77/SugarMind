@@ -26,7 +26,12 @@ Additionally:
 
 Note: Proposal claims that the prototype can converse about gears and paint activity, but instead it is gears and 3d volume activity.
 
+Video example:
+https://github.com/user-attachments/assets/c46c97ea-bf3a-4956-a133-779e7a802dae
+
+
 ---
+
 
 ### System Workflow
 <img width="900" height="491" alt="image" src="https://github.com/user-attachments/assets/5366b82a-3168-4a16-b6ae-451b2112bde4" />
