@@ -236,7 +236,7 @@ conda activate sugarmind
 ```bash
 pip install -r requirements.txt
 pip install tf-keras
-pip install transformers==4.49.0 tokenizers==0.21.0
+pip install transformers==4.49.0 tokenizers==0.21.0 webcolors==1.11.1
 pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
 ```
 
