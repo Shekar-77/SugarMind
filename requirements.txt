@@ -30,3 +30,7 @@ requests
 tiktoken
 tokenizers
 openai-whisper
+moviepy
+fer==22.4.0
+tensorflow
+webcolors==1.11.1
