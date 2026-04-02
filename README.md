@@ -10,6 +10,7 @@ When I started working on this project, the first thing I did was properly explo
 Since Sugar is mainly used by children aged **5–12 years**, I made sure that the model communicates in a tone that is simple, friendly, and suitable for that age group. When I think about my own childhood, I always enjoyed activities that made me think while still being fun. Sugar already does that really well, and adding a reflection agent ensures that children not only play but also actually learn from what they do.
 
 I focused on providing something meaningful to the community through which children can learn and make the best of their experience.
+Note: This is just a sample prototype to help you understand what I am offering in the best way possible. Any bugs found please feel free create an issue will resolve it at the earliest.
 
 ---
 
