@@ -27,6 +27,7 @@ Additionally:
 
 Note: Proposal claims that the prototype can converse about gears and paint activity, but instead it is gears and 3d volume activity.
 You cannot access fine tuning code, I request you to try this link once or download the code and view it locally: https://colab.research.google.com/drive/1FEqDT1HXXjYEHDQ5peddYvmloZ8kB6yg
+You can access the list of names of books used for fine-tuning here: https://docs.google.com/document/d/1crlg5PF2uOPlvGaj117jvGo5SZEBNmHxtSZNr5Kk9IU/edit?usp=drive_link
 
 Video example:
 
